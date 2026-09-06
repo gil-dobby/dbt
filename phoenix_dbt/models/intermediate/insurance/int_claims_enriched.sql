@@ -48,7 +48,7 @@ joined as (
         -- דגלים
         claims.is_settled,
         claims.claim_date between policies.policy_start_date
-                              and coalesce(policies.policy_end_date, '9999-12-31')
+                              and coalesce(policies.policy_end_date, cast('9999-12-31' as date))
                                                         as is_within_policy_period,
 
         -- מטא-דאטה של dbt
