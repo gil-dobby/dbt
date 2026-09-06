@@ -1,0 +1,121 @@
+version: 2
+
+models:
+  - name: dim_customers
+    description: >
+      מימד לקוח — שורה אחת ללקוח, מועשרת במדדים מצטברים על תיק הפוליסות שלו.
+      זו השכבה שה-BI צורך.
+    columns:
+      - name: customer_id
+        description: מפתח ראשי — מזהה לקוח.
+        data_tests:
+          - unique
+          - not_null
+      - name: national_id
+        description: תעודת זהות.
+      - name: full_name
+        description: שם מלא.
+      - name: email
+        description: דוא"ל מנורמל.
+      - name: city
+        description: עיר מגורים.
+      - name: age
+        description: גיל מחושב מתאריך הלידה נכון ליום ההרצה.
+      - name: policies_count
+        description: מספר הפוליסות של הלקוח (כולל לא-פעילות). 0 אם אין.
+        data_tests:
+          - not_null
+      - name: active_policies_count
+        description: מספר הפוליסות הפעילות.
+        data_tests:
+          - not_null
+      - name: total_premium_amount
+        description: סך הפרמיות על כל פוליסות הלקוח.
+      - name: first_policy_start_date
+        description: תאריך תחילת הפוליסה הראשונה — ותק הלקוח.
+      - name: is_active_customer
+        description: דגל — האם ללקוח יש לפחות פוליסה פעילה אחת.
+      - name: dbt_created
+        description: מועד ההרצה של dbt שבנתה את השורה הזו.
+        data_tests:
+          - not_null
+
+  - name: dim_policies
+    description: >
+      מימד פוליסה — שורה אחת לפוליסה, עם מאפייני לקוח משוטחים לנוחות ה-BI.
+    columns:
+      - name: policy_id
+        description: מפתח ראשי — מזהה פוליסה.
+        data_tests:
+          - unique
+          - not_null
+      - name: policy_number
+        description: מספר פוליסה עסקי.
+      - name: customer_id
+        description: מפתח זר ל-dim_customers.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: product_code
+        description: קוד המוצר הביטוחי.
+      - name: policy_status
+        description: סטטוס הפוליסה.
+      - name: premium_amount
+        description: פרמיה שנתית.
+      - name: policy_duration_days
+        description: אורך תקופת הפוליסה בימים.
+      - name: is_active
+        description: דגל — האם הפוליסה פעילה.
+      - name: dbt_created
+        description: מועד ההרצה של dbt שבנתה את השורה הזו.
+        data_tests:
+          - not_null
+
+  - name: fct_claims
+    description: >
+      טבלת עובדות תביעות. **גרעין: תביעה אחת לשורה.**
+      מתחברת ל-dim_policies דרך policy_id ול-dim_customers דרך customer_id.
+    columns:
+      - name: claim_id
+        description: מפתח ראשי — מזהה תביעה. מגדיר את גרעין הטבלה.
+        data_tests:
+          - unique
+          - not_null
+      - name: policy_id
+        description: מפתח זר ל-dim_policies.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('dim_policies')
+                field: policy_id
+      - name: customer_id
+        description: מפתח זר ל-dim_customers.
+        data_tests:
+          - relationships:
+              arguments:
+                to: ref('dim_customers')
+                field: customer_id
+      - name: claim_status
+        description: סטטוס התביעה.
+      - name: claim_amount
+        description: סכום התביעה שהוגש.
+      - name: paid_amount
+        description: סכום ששולם בפועל.
+      - name: outstanding_amount
+        description: יתרה פתוחה — claim_amount פחות paid_amount.
+      - name: claim_date
+        description: תאריך הגשת התביעה.
+      - name: days_from_policy_start
+        description: ימים מתחילת הפוליסה ועד ההגשה.
+      - name: is_settled
+        description: דגל — האם התביעה נסגרה/שולמה.
+      - name: is_within_policy_period
+        description: דגל בקרה — האם התביעה הוגשה בתוך תקופת התוקף.
+      - name: dbt_created
+        description: מועד ההרצה של dbt שבנתה את השורה הזו.
+        data_tests:
+          - not_null

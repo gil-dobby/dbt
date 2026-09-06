@@ -1,0 +1,75 @@
+version: 2
+
+sources:
+  - name: crm
+    description: >
+      מערכת ה-CRM התפעולית של פניקס. נטענת ל-Snowflake ע"י שכבת ה-EL
+      (Fivetran / COPY INTO) — dbt לא כותב לכאן, רק קורא.
+    database: RAW
+    schema: CRM
+
+    tables:
+      - name: customers
+        description: לקוח אחד לשורה. המפתח הטבעי הוא CUSTOMER_ID.
+        columns:
+          - name: customer_id
+            description: מזהה לקוח ייחודי במערכת המקור.
+            data_tests:
+              - unique
+              - not_null
+          - name: id_number
+            description: תעודת זהות.
+          - name: email
+            description: כתובת דוא"ל כפי שהוזנה במקור (לא מנורמלת).
+          - name: birth_date
+            description: תאריך לידה.
+          - name: created_at
+            description: מועד יצירת הרשומה במערכת המקור.
+          - name: updated_at
+            description: מועד עדכון אחרון במערכת המקור.
+
+      - name: policies
+        description: פוליסה אחת לשורה.
+        columns:
+          - name: policy_id
+            description: מזהה פוליסה ייחודי במערכת המקור.
+            data_tests:
+              - unique
+              - not_null
+          - name: customer_id
+            description: בעל הפוליסה.
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('crm', 'customers')
+                    field: customer_id
+          - name: policy_number
+            description: מספר פוליסה עסקי (מוצג ללקוח).
+          - name: product_code
+            description: קוד מוצר ביטוחי.
+          - name: status
+            description: סטטוס הפוליסה במערכת המקור.
+          - name: premium_amount
+            description: פרמיה שנתית.
+
+      - name: claims
+        description: תביעה אחת לשורה.
+        columns:
+          - name: claim_id
+            description: מזהה תביעה ייחודי במערכת המקור.
+            data_tests:
+              - unique
+              - not_null
+          - name: policy_id
+            description: הפוליסה שתחתיה הוגשה התביעה.
+            data_tests:
+              - not_null
+              - relationships:
+                  arguments:
+                    to: source('crm', 'policies')
+                    field: policy_id
+          - name: claim_amount
+            description: סכום התביעה שהוגש.
+          - name: paid_amount
+            description: סכום ששולם בפועל.

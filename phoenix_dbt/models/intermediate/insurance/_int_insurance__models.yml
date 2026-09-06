@@ -1,0 +1,23 @@
+version: 2
+
+models:
+  - name: int_claims_enriched
+    description: >
+      תביעות מועשרות בפרטי הפוליסה והלקוח. שכבת עזר בלבד — ephemeral,
+      לא נוצרת ב-Snowflake ואסור ל-BI לצרוך אותה ישירות.
+      גרעין: תביעה אחת לשורה (ה-join ל-policies הוא many-to-one, בלי fan-out).
+    columns:
+      - name: claim_id
+        description: מפתח ראשי — מזהה תביעה. גרעין המודל.
+      - name: policy_id
+        description: הפוליסה שתחתיה הוגשה התביעה.
+      - name: customer_id
+        description: הלקוח, נגזר דרך הפוליסה.
+      - name: outstanding_amount
+        description: יתרה פתוחה — claim_amount פחות paid_amount.
+      - name: days_from_policy_start
+        description: מספר הימים מתחילת הפוליסה ועד הגשת התביעה.
+      - name: is_within_policy_period
+        description: דגל — האם התביעה הוגשה בתוך תקופת התוקף של הפוליסה.
+      - name: dbt_created
+        description: מועד ההרצה של dbt שבנתה את השורה הזו.

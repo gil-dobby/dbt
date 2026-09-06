@@ -1,0 +1,111 @@
+version: 2
+
+models:
+  - name: stg_crm__customers
+    description: >
+      שכבת stage ללקוחות — יחס 1:1 מול RAW.CRM.CUSTOMERS.
+      rename, cast וניקוי בלבד. אין joins ואין לוגיקה עסקית.
+    columns:
+      - name: customer_id
+        description: מפתח ראשי — מזהה לקוח.
+        data_tests:
+          - unique
+          - not_null
+      - name: national_id
+        description: תעודת זהות (שם מנורמל של id_number).
+      - name: full_name
+        description: שם מלא משורשר.
+      - name: email
+        description: דוא"ל ב-lowercase ללא רווחים מיותרים.
+      - name: birth_date
+        description: תאריך לידה (date).
+      - name: source_created_at
+        description: מועד יצירה במערכת המקור.
+      - name: source_updated_at
+        description: מועד עדכון אחרון במערכת המקור.
+      - name: dbt_created
+        description: מועד ההרצה של dbt שבנתה את השורה הזו.
+        data_tests:
+          - not_null
+
+  - name: stg_crm__policies
+    description: >
+      שכבת stage לפוליסות — יחס 1:1 מול RAW.CRM.POLICIES.
+    columns:
+      - name: policy_id
+        description: מפתח ראשי — מזהה פוליסה.
+        data_tests:
+          - unique
+          - not_null
+      - name: customer_id
+        description: מפתח זר ללקוח.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_crm__customers')
+                field: customer_id
+      - name: policy_number
+        description: מספר פוליסה עסקי.
+        data_tests:
+          - unique
+      - name: product_code
+        description: קוד המוצר הביטוחי.
+      - name: policy_status
+        description: סטטוס פוליסה מנורמל ל-lowercase.
+        data_tests:
+          - accepted_values:
+              arguments:
+                # TODO: להתאים לערכים האמיתיים ב-RAW לאחר הטעינה הראשונה
+                values: ['active', 'cancelled', 'expired', 'pending']
+      - name: premium_amount
+        description: פרמיה שנתית, number(18,2).
+      - name: policy_start_date
+        description: תחילת תוקף.
+      - name: policy_end_date
+        description: סוף תוקף.
+      - name: is_active
+        description: דגל בוליאני — האם הפוליסה בסטטוס active.
+      - name: dbt_created
+        description: מועד ההרצה של dbt שבנתה את השורה הזו.
+        data_tests:
+          - not_null
+
+  - name: stg_crm__claims
+    description: >
+      שכבת stage לתביעות — יחס 1:1 מול RAW.CRM.CLAIMS.
+    columns:
+      - name: claim_id
+        description: מפתח ראשי — מזהה תביעה.
+        data_tests:
+          - unique
+          - not_null
+      - name: policy_id
+        description: מפתח זר לפוליסה.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments:
+                to: ref('stg_crm__policies')
+                field: policy_id
+      - name: claim_number
+        description: מספר תביעה עסקי.
+      - name: claim_status
+        description: סטטוס תביעה מנורמל ל-lowercase.
+        data_tests:
+          - accepted_values:
+              arguments:
+                # TODO: להתאים לערכים האמיתיים ב-RAW לאחר הטעינה הראשונה
+                values: ['open', 'in_review', 'approved', 'rejected', 'paid', 'closed']
+      - name: claim_amount
+        description: סכום התביעה שהוגש.
+      - name: paid_amount
+        description: סכום ששולם בפועל.
+      - name: claim_date
+        description: תאריך הגשת התביעה.
+      - name: is_settled
+        description: דגל בוליאני — האם התביעה נסגרה/שולמה.
+      - name: dbt_created
+        description: מועד ההרצה של dbt שבנתה את השורה הזו.
+        data_tests:
+          - not_null
